@@ -1,0 +1,606 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .carousel-container {
+            scroll-behavior: smooth;
+        }
+        
+        .video-card {
+            transition: all 0.3s ease;
+        }
+        
+        .video-card:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .modal {
+            backdrop-filter: blur(10px);
+        }
+        
+        .preview-video {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .video-card:hover .preview-video {
+            opacity: 1;
+        }
+        
+        .video-card:hover .poster-image {
+            opacity: 0;
+        }
+        
+        .poster-image {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Header -->
+    <header class="bg-black py-4 px-6">
+        <h1 class="text-3xl font-bold text-red-600">VideoFlix</h1>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="content" class="hidden">
+        <!-- Latest Videos Carousel -->
+        <section class="py-8 px-6">
+            <h2 class="text-2xl font-bold mb-6">วิดีโอล่าสุด</h2>
+            <div class="relative">
+                <div id="carousel" class="carousel-container flex overflow-x-auto space-x-4 pb-4">
+                    <!-- Carousel items will be populated here -->
+                </div>
+                <button id="prevBtn" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 p-2 rounded-r">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button id="nextBtn" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 p-2 rounded-l">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Video Gallery -->
+        <section class="py-8 px-6">
+            <h2 class="text-2xl font-bold mb-6">แกลลอรี่วิดีโอ</h2>
+            <div id="gallery" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Gallery items will be populated here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-75 modal hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 id="modalTitle" class="text-2xl font-bold"></h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="modalVideo" class="mb-4 bg-gray-700 rounded aspect-video flex items-center justify-center relative overflow-hidden">
+                    <video id="modalVideoPlayer" class="w-full h-full rounded hidden" controls preload="metadata">
+                        <source id="modalVideoSource" src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div id="modalVideoPlaceholder" class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-gray-400">สมาชิก: </span>
+                        <span id="modalMember" class="text-white"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">เวลาอัพโหลด: </span>
+                        <span id="modalTime" class="text-white"></span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">รายละเอียด: </span>
+                        <span id="modalDescription" class="text-white"></span>
+                    </div>
+                </div>
+                
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let videosData = [];
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwgRT9ppXn8b3NkPDrDLIrzXrbxhiulCKgSiz8N239g9hIhdXG8SaaR4rSJldzIx0/exec';
+
+        // Sample data for demonstration (will be replaced with Google Sheets data)
+        const sampleData = [
+            {
+                id: 1,
+                title: "The Matrix Reloaded",
+                member: "John Doe",
+                time: "2024-01-15 14:30",
+                description: "หนังแอคชั่นไซไฟสุดมันส์",
+                poster: "https://via.placeholder.com/300x450/1f2937/ffffff?text=Matrix+Reloaded",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+            },
+            {
+                id: 2,
+                title: "Inception",
+                member: "Jane Smith",
+                time: "2024-01-14 16:45",
+                description: "หนังระทึกขวัญเรื่องความฝัน",
+                poster: "https://via.placeholder.com/300x450/374151/ffffff?text=Inception",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
+            },
+            {
+                id: 3,
+                title: "Interstellar",
+                member: "Mike Johnson",
+                time: "2024-01-13 19:20",
+                description: "การผจญภัยในอวกาศ",
+                poster: "https://via.placeholder.com/300x450/4b5563/ffffff?text=Interstellar",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+            },
+            {
+                id: 4,
+                title: "Avatar",
+                member: "Sarah Wilson",
+                time: "2024-01-12 21:10",
+                description: "โลกแห่งแพนดอร่า",
+                poster: "https://via.placeholder.com/300x450/6b7280/ffffff?text=Avatar",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
+            },
+            {
+                id: 5,
+                title: "Avengers Endgame",
+                member: "Tom Brown",
+                time: "2024-01-11 18:30",
+                description: "การต่อสู้ครั้งสุดท้าย",
+                poster: "https://via.placeholder.com/300x450/9ca3af/ffffff?text=Avengers",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+            },
+            {
+                id: 6,
+                title: "Spider-Man",
+                member: "Lisa Davis",
+                time: "2024-01-10 20:15",
+                description: "มนุษย์แมงมุมผู้พิทักษ์โลก",
+                poster: "https://via.placeholder.com/300x450/d1d5db/000000?text=Spider-Man",
+                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
+            }
+        ];
+
+        // Convert Google Drive link to direct URL
+        function convertGoogleDriveUrl(url, isVideo = false) {
+            if (!url) return '';
+            
+            // Check for different Google Drive URL formats
+            let fileId = '';
+            
+            // Format 1: https://drive.google.com/file/d/FILE_ID
+            const driveRegex1 = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
+            const match1 = url.match(driveRegex1);
+            
+            // Format 2: https://drive.google.com/open?id=FILE_ID
+            const driveRegex2 = /https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/;
+            const match2 = url.match(driveRegex2);
+            
+            // Format 3: Direct file ID
+            const directIdRegex = /^[a-zA-Z0-9_-]{25,}$/;
+            const match3 = url.match(directIdRegex);
+            
+            if (match1) {
+                fileId = match1[1];
+            } else if (match2) {
+                fileId = match2[1];
+            } else if (match3) {
+                fileId = url;
+            }
+            
+            if (fileId) {
+                if (isVideo) {
+                    // For videos, use the preview format as primary method
+                    return {
+                        primary: `https://drive.google.com/file/d/${fileId}/preview`,
+                        embed: `https://drive.google.com/file/d/${fileId}/preview`,
+                        fileId: fileId
+                    };
+                } else {
+                    // For images, use the thumbnail format
+                    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                }
+            }
+            
+            // Return original URL if not a Google Drive link
+            return isVideo ? { primary: url, embed: url, fileId: null } : url;
+        }
+
+        // Fetch data from Google Sheets
+        async function fetchData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    videosData = data.map((item, index) => {
+                        const videoUrls = convertGoogleDriveUrl(item.preview, true);
+                        return {
+                            id: index + 1,
+                            title: item.title || `Video ${index + 1}`,
+                            member: item.member || 'Unknown',
+                            time: item.time || new Date().toLocaleString('th-TH'),
+                            description: item.description || 'ไม่มีรายละเอียด',
+                            poster: convertGoogleDriveUrl(item.poster, false) || `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(item.title || 'Video')}`,
+                            preview: videoUrls.primary || '',
+                            videoUrls: videoUrls
+                        };
+                    });
+                } else {
+                    // Use sample data if no data from sheets
+                    videosData = sampleData;
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // Use sample data as fallback
+                videosData = sampleData;
+            }
+            
+            renderContent();
+        }
+
+        // Create video card HTML
+        function createVideoCard(video, isCarousel = false) {
+            const cardClass = isCarousel ? 'flex-shrink-0 w-80' : '';
+            const fallbackImage = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(video.title)}`;
+            
+            return `
+                <div class="video-card ${cardClass} cursor-pointer relative group" onclick="openModal(${video.id})">
+                    <div class="relative overflow-hidden rounded-lg bg-gray-800">
+                        <img src="${video.poster}" alt="${video.title}" 
+                             class="poster-image w-full h-auto object-cover aspect-[2/3]"
+                             onerror="this.src='${fallbackImage}'; this.onerror=null;"
+                             loading="lazy">
+                        ${video.preview ? `
+                            <video class="preview-video absolute inset-0 w-full h-full object-cover" 
+                                   muted loop preload="none">
+                                <source src="${video.preview}" type="video/mp4">
+                            </video>
+                        ` : ''}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <h3 class="font-bold text-sm mb-1 truncate">${video.title}</h3>
+                            <p class="text-xs text-gray-300 truncate">${video.member}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render carousel and gallery
+        function renderContent() {
+            const carousel = document.getElementById('carousel');
+            const gallery = document.getElementById('gallery');
+            
+            // Render carousel (latest 6 videos)
+            const latestVideos = videosData.slice(0, 6);
+            carousel.innerHTML = latestVideos.map(video => createVideoCard(video, true)).join('');
+            
+            // Render gallery (all videos)
+            gallery.innerHTML = videosData.map(video => createVideoCard(video)).join('');
+            
+            // Show content and hide loading
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+            
+            // Add hover event listeners for video preview
+            addHoverListeners();
+        }
+
+        // Add hover event listeners
+        function addHoverListeners() {
+            const videoCards = document.querySelectorAll('.video-card');
+            
+            videoCards.forEach(card => {
+                const video = card.querySelector('.preview-video');
+                
+                if (video) {
+                    card.addEventListener('mouseenter', () => {
+                        setTimeout(() => {
+                            if (card.matches(':hover')) {
+                                video.play().catch(e => console.log('Video play failed:', e));
+                            }
+                        }, 500);
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                }
+            });
+        }
+
+        // Open modal
+        function openModal(videoId) {
+            const video = videosData.find(v => v.id === videoId);
+            if (!video) return;
+            
+            document.getElementById('modalTitle').textContent = video.title;
+            document.getElementById('modalMember').textContent = video.member;
+            document.getElementById('modalTime').textContent = video.time;
+            document.getElementById('modalDescription').textContent = video.description;
+            
+            // Show loading initially and start loading video
+            const videoPlayer = document.getElementById('modalVideoPlayer');
+            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
+            
+            videoPlayer.classList.add('hidden');
+            videoPlaceholder.classList.remove('hidden');
+            
+            // Store video data for later use
+            window.currentVideoData = video;
+            
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Auto-load video
+            playVideo();
+        }
+
+        // Play video function
+        function playVideo() {
+            const video = window.currentVideoData;
+            if (!video) return;
+            
+            const videoPlayer = document.getElementById('modalVideoPlayer');
+            const videoSource = document.getElementById('modalVideoSource');
+            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
+            const modalVideo = document.getElementById('modalVideo');
+            
+            if (video.preview && video.videoUrls) {
+                // Try to load video with fallback options
+                setupVideoPlayer(video.videoUrls, videoPlayer, videoSource, videoPlaceholder, modalVideo);
+            } else {
+                videoPlayer.classList.add('hidden');
+                videoPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        // Setup video player with iframe embed as primary method
+        function setupVideoPlayer(videoUrls, videoPlayer, videoSource, videoPlaceholder, modalVideo) {
+            console.log('Setting up video player with URLs:', videoUrls);
+            
+            // Clear any existing iframe first
+            const existingIframe = modalVideo.querySelector('iframe');
+            if (existingIframe) {
+                existingIframe.remove();
+            }
+            
+            // Hide video player and placeholder initially
+            videoPlayer.classList.add('hidden');
+            videoPlaceholder.classList.add('hidden');
+            
+            // Use iframe embed for all videos (Google Drive format)
+            if (videoUrls.fileId) {
+                console.log('Using Google Drive iframe embed with file ID:', videoUrls.fileId);
+                setupGoogleDriveIframe(videoUrls.fileId, modalVideo);
+            } else if (videoUrls.embed && videoUrls.embed !== '') {
+                console.log('Using generic iframe embed');
+                setupGenericIframe(videoUrls.embed, modalVideo, videoPlayer, videoPlaceholder);
+            } else {
+                console.log('No valid video URL found');
+                videoPlayer.classList.add('hidden');
+                videoPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        // Setup Google Drive iframe player
+        function setupGoogleDriveIframe(fileId, modalVideo) {
+            console.log('Setting up Google Drive iframe for file:', fileId);
+            
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'w-full h-full bg-gray-900 rounded flex flex-col items-center justify-center';
+            loadingDiv.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <p class="text-white text-sm mb-2">กำลังโหลดวิดีโอจาก Google Drive...</p>
+                </div>
+            `;
+            modalVideo.appendChild(loadingDiv);
+            
+            // Create iframe with exact format you specified
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+            iframe.width = "640";
+            iframe.height = "480";
+            iframe.setAttribute('allow', 'autoplay');
+            iframe.setAttribute('allowfullscreen', '');
+            iframe.className = 'w-full h-full rounded';
+            iframe.style.display = 'none';
+            
+            // Handle iframe load
+            iframe.onload = () => {
+                console.log('Google Drive iframe loaded successfully');
+                loadingDiv.remove();
+                iframe.style.display = 'block';
+            };
+            
+            // Handle iframe error
+            iframe.onerror = () => {
+                console.log('Google Drive iframe failed to load');
+                loadingDiv.innerHTML = `
+                    <div class="text-center p-4">
+                        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M8 5v10l7-5-7-5z"/>
+                        </svg>
+                        <p class="text-white text-sm mb-2">ไม่สามารถโหลดวิดีโอได้</p>
+                        <p class="text-gray-400 text-xs mb-4">กรุณาลองเปิดใน Google Drive</p>
+                        <button onclick="window.open('https://drive.google.com/file/d/${fileId}/view', '_blank')" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                            เปิดใน Google Drive
+                        </button>
+                    </div>
+                `;
+            };
+            
+            modalVideo.appendChild(iframe);
+            
+            // Timeout fallback
+            setTimeout(() => {
+                if (iframe.style.display === 'none') {
+                    console.log('Google Drive iframe timeout');
+                    iframe.onerror();
+                }
+            }, 10000);
+        }
+
+        // Setup generic iframe player (for non-Google Drive videos)
+        function setupGenericIframe(embedUrl, modalVideo, videoPlayer, videoPlaceholder) {
+            console.log('Setting up generic iframe with URL:', embedUrl);
+            
+            if (embedUrl && embedUrl !== '') {
+                videoPlayer.classList.add('hidden');
+                videoPlaceholder.classList.add('hidden');
+                
+                // Show loading state
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'w-full h-full bg-gray-900 rounded flex items-center justify-center';
+                loadingDiv.innerHTML = `
+                    <div class="text-center p-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                        <p class="text-white text-sm">กำลังโหลดวิดีโอ...</p>
+                    </div>
+                `;
+                modalVideo.appendChild(loadingDiv);
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = embedUrl;
+                iframe.className = 'w-full h-full rounded';
+                iframe.setAttribute('allowfullscreen', '');
+                iframe.setAttribute('webkitallowfullscreen', '');
+                iframe.setAttribute('mozallowfullscreen', '');
+                iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media');
+                iframe.setAttribute('frameborder', '0');
+                iframe.style.display = 'none';
+                
+                iframe.onload = () => {
+                    console.log('Generic iframe loaded successfully');
+                    loadingDiv.remove();
+                    iframe.style.display = 'block';
+                };
+                
+                iframe.onerror = () => {
+                    console.log('Generic iframe failed to load');
+                    loadingDiv.remove();
+                    videoPlayer.classList.add('hidden');
+                    videoPlaceholder.classList.remove('hidden');
+                    iframe.remove();
+                };
+                
+                modalVideo.appendChild(iframe);
+                
+                // Timeout fallback
+                setTimeout(() => {
+                    if (iframe.style.display === 'none') {
+                        console.log('Generic iframe timeout');
+                        iframe.onerror();
+                    }
+                }, 8000);
+                
+            } else {
+                console.log('No embed URL provided');
+                videoPlayer.classList.add('hidden');
+                videoPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            const videoPlayer = document.getElementById('modalVideoPlayer');
+            const modalVideo = document.getElementById('modalVideo');
+            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
+            
+            // Stop video player
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+            videoPlayer.classList.add('hidden');
+            
+            // Remove any iframe
+            const iframe = modalVideo.querySelector('iframe');
+            if (iframe) {
+                iframe.remove();
+            }
+            
+            // Remove any loading divs or custom containers
+            const customDivs = modalVideo.querySelectorAll('div:not(#modalVideoPlayer):not(#modalVideoPlaceholder)');
+            customDivs.forEach(div => div.remove());
+            
+            // Reset to loading view
+            videoPlaceholder.classList.remove('hidden');
+            
+            // Clear current video data
+            window.currentVideoData = null;
+            
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Carousel navigation
+        function setupCarousel() {
+            const carousel = document.getElementById('carousel');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.addEventListener('click', () => {
+                carousel.scrollBy({ left: -320, behavior: 'smooth' });
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                carousel.scrollBy({ left: 320, behavior: 'smooth' });
+            });
+        }
+
+        // Event listeners
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCarousel();
+            fetchData();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'964d0643141a3f9e',t:'MTc1MzQ2MDg0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -26,6 +26,16 @@
             transform: scale(1.08);
             z-index: 10;
         }
+        .carousel-nav-btn {
+            transition: all 0.3s ease;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+        }
+        
+        .carousel-nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
         
         .modal {
             backdrop-filter: blur(10px);
@@ -64,13 +74,13 @@
                 <div id="carousel" class="carousel-container flex overflow-x-auto space-x-4 pb-4">
                     <!-- Carousel items will be populated here -->
                 </div>
-                <button id="prevBtn" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 p-2 rounded-r">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="prevBtn" class="carousel-nav-btn absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 p-3 rounded-full shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
-                <button id="nextBtn" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 p-2 rounded-l">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="nextBtn" class="carousel-nav-btn absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 p-3 rounded-full shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                 </button>

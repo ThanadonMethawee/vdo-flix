@@ -1,0 +1,699 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload Portal - Netflix Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .netflix-red {
+            background: linear-gradient(45deg, #e50914, #f40612);
+        }
+        
+        .upload-area {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #e50914;
+            background-color: rgba(229, 9, 20, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #e50914;
+            background-color: rgba(229, 9, 20, 0.1);
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #e50914;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success-animation {
+            animation: successPulse 0.6s ease-in-out;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8 max-w-4xl fade-in">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent">
+                Video Upload Portal
+            </h1>
+            <p class="text-gray-300 text-lg">อัพโหลดวิดีโอของคุณในสไตล์ Netflix</p>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="glass-effect rounded-2xl shadow-2xl p-8">
+            <form id="uploadForm" class="space-y-6">
+                <!-- Title -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">ชื่อเรื่อง *</label>
+                    <input type="text" id="title" required 
+                           class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                           placeholder="กรอกชื่อเรื่องของวิดีโอ">
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">ประเภท *</label>
+                    <select id="type" required 
+                            class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white">
+                        <option value="">เลือกประเภทวิดีโอ</option>
+                        <option value="MV">MV</option>
+                        <option value="Teaser">Teaser</option>
+                        <option value="Short Film">Short Film</option>
+                        <option value="Documentary">Documentary</option>
+                        <option value="Commercial">Commercial</option>
+                    </select>
+                </div>
+
+                <!-- Team Name -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">ชื่อทีม *</label>
+                    <input type="text" id="teamName" required 
+                           class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                           placeholder="กรอกชื่อทีมผู้จัดทำ">
+                </div>
+
+                <!-- Team Members -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">สมาชิกในทีม *</label>
+                    <textarea id="teamMembers" required rows="3"
+                              class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                              placeholder="กรอกรายชื่อสมาชิกในทีม (แยกด้วยเครื่องหมายจุลภาค)"></textarea>
+                </div>
+
+                <!-- Cover Image Upload -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">รูปภาพปกวิดีโอ *</label>
+                    <div class="space-y-4">
+                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" id="coverUploadArea">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-gray-300 mb-2">คลิกเพื่ือเลือกไฟล์รูปภาพ หรือลากไฟล์มาวางที่นี่</p>
+                                <p class="text-sm text-gray-500">รองรับไฟล์ JPG, PNG, GIF (ขนาดไม่เกิน 10MB)</p>
+                            </div>
+                            <input type="file" id="coverFile" accept="image/*" class="hidden">
+                        </div>
+                        <div class="text-center text-gray-400">หรือ</div>
+                        <input type="url" id="coverLink" 
+                               class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                               placeholder="กรอกลิงค์รูปภาพจาก Google Drive">
+                        <div id="coverPreview" class="hidden mt-4">
+                            <div class="relative">
+                                <img id="coverPreviewImg" class="w-full max-w-md mx-auto rounded-lg shadow-lg" alt="Cover Preview">
+                                <button type="button" id="cancelCoverBtn" 
+                                        class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-all duration-200 transform hover:scale-110">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-center text-gray-400 text-sm mt-2">คลิกปุ่ม X เพื่อยกเลิกการเลือกไฟล์</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Upload -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">ไฟล์วิดีโอ *</label>
+                    <div class="space-y-4">
+                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" id="videoUploadArea">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-gray-300 mb-2">คลิกเพื่อเลือกไฟล์วิดีโอ หรือลากไฟล์มาวางที่นี่</p>
+                                <p class="text-sm text-gray-500">รองรับไฟล์ MP4, MOV, AVI (ขนาดไม่เกิน 5GB)</p>
+                            </div>
+                            <input type="file" id="videoFile" accept="video/*" class="hidden">
+                        </div>
+                        <div class="text-center text-gray-400">หรือ</div>
+                        <input type="url" id="videoLink" 
+                               class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                               placeholder="กรอกลิงค์วิดีโอจาก Google Drive">
+                        <div id="videoPreview" class="hidden mt-4">
+                            <div class="relative">
+                                <video id="videoPreviewPlayer" class="w-full max-w-md mx-auto rounded-lg shadow-lg" controls>
+                                    <source id="videoPreviewSource" src="" type="">
+                                    เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                                </video>
+                                <button type="button" id="cancelVideoBtn" 
+                                        class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-all duration-200 transform hover:scale-110">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p id="videoFileName" class="text-center text-gray-300 mt-2 text-sm"></p>
+                            <p class="text-center text-gray-400 text-xs mt-1">คลิกปุ่ม X เพื่อยกเลิกการเลือกไฟล์</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-6">
+                    <button type="submit" id="submitBtn" 
+                            class="w-full netflix-red text-white font-semibold py-4 px-6 rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
+                        <span id="submitText" class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            อัพโหลดวิดีโอ
+                        </span>
+                        <div id="submitLoader" class="loading-spinner mx-auto hidden"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Progress -->
+        <div id="uploadProgress" class="mt-6 glass-effect rounded-lg p-6 hidden">
+            <h3 class="text-lg font-semibold mb-4 text-white">ความคืบหน้าการอัพโหลด</h3>
+            
+            <!-- Overall Progress -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-300">ความคืบหน้าทั้งหมด</span>
+                    <span id="overallPercent" class="text-sm text-gray-300">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-3">
+                    <div id="overallProgressBar" class="netflix-red h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span id="uploadedSize">0 MB</span>
+                    <span id="totalSize">0 MB</span>
+                </div>
+            </div>
+            
+            <!-- Image Upload Progress -->
+            <div id="imageProgress" class="mb-4 hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-300">📸 รูปภาพปก</span>
+                    <span id="imagePercent" class="text-sm text-gray-300">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                    <div id="imageProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span id="imageUploadedSize">0 MB</span>
+                    <span id="imageTotalSize">0 MB</span>
+                </div>
+            </div>
+            
+            <!-- Video Upload Progress -->
+            <div id="videoProgress" class="mb-4 hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-300">🎬 ไฟล์วิดีโอ</span>
+                    <span id="videoPercent" class="text-sm text-gray-300">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                    <div id="videoProgressBar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span id="videoUploadedSize">0 MB</span>
+                    <span id="videoTotalSize">0 MB</span>
+                </div>
+            </div>
+            
+            <!-- Upload Status -->
+            <div id="uploadStatus" class="text-center text-gray-300 text-sm">
+                เตรียมการอัพโหลด...
+            </div>
+            
+            <!-- Upload Speed -->
+            <div id="uploadSpeed" class="text-center text-gray-400 text-xs mt-2 hidden">
+                ความเร็ว: <span id="speedValue">0 MB/s</span>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage" class="mt-6 p-4 rounded-lg hidden">
+            <div class="flex items-center">
+                <div id="statusIcon" class="mr-3"></div>
+                <div id="statusText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylBC7HmvRQKuAESjWWLqhe4v2LKW8mp63zwgZWbpbaayhnW7lCPKGdPJZT5ElqitxbRA/exec';
+        
+        // File upload handlers
+        function setupFileUpload(areaId, inputId, previewId = null) {
+            const area = document.getElementById(areaId);
+            const input = document.getElementById(inputId);
+            
+            area.addEventListener('click', () => input.click());
+            
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+            
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('dragover');
+            });
+            
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    handleFileSelect(input, previewId);
+                }
+            });
+            
+            input.addEventListener('change', () => handleFileSelect(input, previewId));
+        }
+        
+        function handleFileSelect(input, previewId) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // Validate file size
+            if (input.id === 'coverFile') {
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    showStatus('error', `ไฟล์รูปภาพมีขนาดใหญ่เกินไป (${formatFileSize(file.size)}) กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 10MB`);
+                    input.value = '';
+                    return;
+                }
+            } else if (input.id === 'videoFile') {
+                const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
+                if (file.size > maxSize) {
+                    showStatus('error', `ไฟล์วิดีโอมีขนาดใหญ่เกินไป (${formatFileSize(file.size)}) กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5GB`);
+                    input.value = '';
+                    return;
+                }
+            }
+            
+            if (file && previewId) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById(previewId);
+                    
+                    if (previewId === 'coverPreview') {
+                        // Handle image preview
+                        const img = document.getElementById(previewId + 'Img');
+                        img.src = e.target.result;
+                    } else if (previewId === 'videoPreview') {
+                        // Handle video preview
+                        const video = document.getElementById('videoPreviewPlayer');
+                        const source = document.getElementById('videoPreviewSource');
+                        const fileName = document.getElementById('videoFileName');
+                        
+                        source.src = e.target.result;
+                        source.type = file.type;
+                        video.load(); // Reload video element
+                        fileName.textContent = `ไฟล์: ${file.name} (${formatFileSize(file.size)})`;
+                    }
+                    
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve({
+                        data: base64,
+                        name: file.name,
+                        type: file.type
+                    });
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('statusMessage');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            statusDiv.className = `mt-6 p-4 rounded-lg glass-effect ${type === 'success' ? 'border-green-500/50' : 
+                                                        type === 'error' ? 'border-red-500/50' : 
+                                                        'border-blue-500/50'} border`;
+            
+            statusIcon.innerHTML = type === 'success' ? 
+                '<svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' :
+                type === 'error' ?
+                '<svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>' :
+                '<div class="loading-spinner"></div>';
+            
+            statusText.textContent = message;
+            statusDiv.classList.remove('hidden');
+            statusDiv.classList.add('fade-in');
+            
+            if (type === 'success') {
+                statusDiv.classList.add('success-animation');
+            }
+        }
+        
+        // Progress tracking functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 MB';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+        
+        function showUploadProgress() {
+            document.getElementById('uploadProgress').classList.remove('hidden');
+        }
+        
+        function hideUploadProgress() {
+            document.getElementById('uploadProgress').classList.add('hidden');
+        }
+        
+        function updateOverallProgress(uploaded, total) {
+            const percent = total > 0 ? Math.round((uploaded / total) * 100) : 0;
+            document.getElementById('overallPercent').textContent = percent + '%';
+            document.getElementById('overallProgressBar').style.width = percent + '%';
+            document.getElementById('uploadedSize').textContent = formatFileSize(uploaded);
+            document.getElementById('totalSize').textContent = formatFileSize(total);
+        }
+        
+        function updateImageProgress(uploaded, total, show = true) {
+            const progressDiv = document.getElementById('imageProgress');
+            if (show && total > 0) {
+                progressDiv.classList.remove('hidden');
+                const percent = Math.round((uploaded / total) * 100);
+                document.getElementById('imagePercent').textContent = percent + '%';
+                document.getElementById('imageProgressBar').style.width = percent + '%';
+                document.getElementById('imageUploadedSize').textContent = formatFileSize(uploaded);
+                document.getElementById('imageTotalSize').textContent = formatFileSize(total);
+            } else {
+                progressDiv.classList.add('hidden');
+            }
+        }
+        
+        function updateVideoProgress(uploaded, total, show = true) {
+            const progressDiv = document.getElementById('videoProgress');
+            if (show && total > 0) {
+                progressDiv.classList.remove('hidden');
+                const percent = Math.round((uploaded / total) * 100);
+                document.getElementById('videoPercent').textContent = percent + '%';
+                document.getElementById('videoProgressBar').style.width = percent + '%';
+                document.getElementById('videoUploadedSize').textContent = formatFileSize(uploaded);
+                document.getElementById('videoTotalSize').textContent = formatFileSize(total);
+            } else {
+                progressDiv.classList.add('hidden');
+            }
+        }
+        
+        function updateUploadStatus(message) {
+            document.getElementById('uploadStatus').textContent = message;
+        }
+        
+        function resetProgress() {
+            updateOverallProgress(0, 0);
+            updateImageProgress(0, 0, false);
+            updateVideoProgress(0, 0, false);
+            updateUploadStatus('เตรียมการอัพโหลด...');
+        }
+        
+        // Realistic file upload progress simulation with speed tracking
+        function simulateFileUpload(file, type, onProgress) {
+            return new Promise((resolve) => {
+                const totalSize = file.size;
+                let uploadedSize = 0;
+                let startTime = Date.now();
+                let lastUpdateTime = startTime;
+                let lastUploadedSize = 0;
+                
+                // Calculate realistic chunk size based on file size
+                let chunkSize;
+                if (totalSize < 1024 * 1024) { // < 1MB
+                    chunkSize = Math.max(totalSize / 10, 1024); // 10 chunks minimum
+                } else if (totalSize < 10 * 1024 * 1024) { // < 10MB
+                    chunkSize = Math.max(totalSize / 50, 10240); // 50 chunks
+                } else if (totalSize < 100 * 1024 * 1024) { // < 100MB
+                    chunkSize = Math.max(totalSize / 100, 102400); // 100 chunks
+                } else { // >= 100MB
+                    chunkSize = Math.max(totalSize / 200, 1024000); // 200 chunks
+                }
+                
+                const uploadChunk = () => {
+                    const currentTime = Date.now();
+                    
+                    // Simulate variable upload speed
+                    const speedVariation = 0.5 + Math.random(); // 0.5x to 1.5x speed
+                    const actualChunkSize = Math.min(chunkSize * speedVariation, totalSize - uploadedSize);
+                    uploadedSize = Math.min(uploadedSize + actualChunkSize, totalSize);
+                    
+                    // Calculate upload speed
+                    const timeDiff = (currentTime - lastUpdateTime) / 1000; // seconds
+                    const sizeDiff = uploadedSize - lastUploadedSize;
+                    const speed = timeDiff > 0 ? sizeDiff / timeDiff : 0;
+                    
+                    // Update speed display
+                    if (timeDiff > 0.5) { // Update speed every 500ms
+                        const speedElement = document.getElementById('speedValue');
+                        if (speedElement) {
+                            speedElement.textContent = formatFileSize(speed) + '/s';
+                        }
+                        document.getElementById('uploadSpeed').classList.remove('hidden');
+                        lastUpdateTime = currentTime;
+                        lastUploadedSize = uploadedSize;
+                    }
+                    
+                    onProgress(uploadedSize, totalSize, speed);
+                    
+                    if (uploadedSize >= totalSize) {
+                        // Hide speed when complete
+                        setTimeout(() => {
+                            document.getElementById('uploadSpeed').classList.add('hidden');
+                        }, 1000);
+                        resolve();
+                    } else {
+                        // Realistic delay based on file size
+                        let delay;
+                        if (totalSize < 1024 * 1024) { // < 1MB
+                            delay = 50 + Math.random() * 100; // 50-150ms
+                        } else if (totalSize < 100 * 1024 * 1024) { // < 100MB
+                            delay = 100 + Math.random() * 200; // 100-300ms
+                        } else { // >= 100MB
+                            delay = 200 + Math.random() * 300; // 200-500ms
+                        }
+                        setTimeout(uploadChunk, delay);
+                    }
+                };
+                
+                // Start upload after a brief delay
+                setTimeout(uploadChunk, 200);
+            });
+        }
+        
+        // Cancel button handlers
+        function setupCancelButtons() {
+            // Cancel cover image
+            document.getElementById('cancelCoverBtn').addEventListener('click', () => {
+                document.getElementById('coverFile').value = '';
+                document.getElementById('coverPreview').classList.add('hidden');
+            });
+            
+            // Cancel video file
+            document.getElementById('cancelVideoBtn').addEventListener('click', () => {
+                const videoFile = document.getElementById('videoFile');
+                const videoPlayer = document.getElementById('videoPreviewPlayer');
+                const videoSource = document.getElementById('videoPreviewSource');
+                
+                videoFile.value = '';
+                videoPlayer.pause();
+                videoSource.src = '';
+                videoPlayer.load();
+                document.getElementById('videoPreview').classList.add('hidden');
+            });
+        }
+        
+        // Initialize file uploads
+        setupFileUpload('coverUploadArea', 'coverFile', 'coverPreview');
+        setupFileUpload('videoUploadArea', 'videoFile', 'videoPreview');
+        setupCancelButtons();
+        
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitLoader = document.getElementById('submitLoader');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoader.classList.remove('hidden');
+            
+            // Initialize progress tracking
+            showUploadProgress();
+            resetProgress();
+            
+            try {
+                // Collect form data
+                const formData = {
+                    title: document.getElementById('title').value,
+                    type: document.getElementById('type').value,
+                    teamName: document.getElementById('teamName').value,
+                    teamMembers: document.getElementById('teamMembers').value,
+                    coverLink: document.getElementById('coverLink').value,
+                    videoLink: document.getElementById('videoLink').value
+                };
+                
+                // Validate required fields
+                if (!formData.title || !formData.type || !formData.teamName || !formData.teamMembers) {
+                    throw new Error('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+                }
+                
+                const coverFile = document.getElementById('coverFile').files[0];
+                const videoFile = document.getElementById('videoFile').files[0];
+                
+                if (!coverFile && !formData.coverLink) {
+                    throw new Error('กรุณาอัพโหลดรูปภาพปกหรือกรอกลิงค์');
+                }
+                
+                if (!videoFile && !formData.videoLink) {
+                    throw new Error('กรุณาอัพโหลดไฟล์วิดีโอหรือกรอกลิงค์');
+                }
+                
+                // Calculate total file size
+                const totalFileSize = (coverFile ? coverFile.size : 0) + (videoFile ? videoFile.size : 0);
+                let totalUploaded = 0;
+                
+                updateOverallProgress(0, totalFileSize);
+                updateUploadStatus('เริ่มต้นการอัพโหลด...');
+                
+                // Handle cover image with progress
+                if (coverFile) {
+                    updateUploadStatus('กำลังอัพโหลดรูปภาพปก...');
+                    
+                    await simulateFileUpload(coverFile, 'image', (uploaded, total) => {
+                        updateImageProgress(uploaded, total);
+                        updateOverallProgress(uploaded, totalFileSize);
+                    });
+                    
+                    const coverBase64 = await fileToBase64(coverFile);
+                    formData.coverFile = coverBase64;
+                    totalUploaded += coverFile.size;
+                    updateUploadStatus('อัพโหลดรูปภาพปกสำเร็จ!');
+                }
+                
+                // Handle video file with progress
+                if (videoFile) {
+                    updateUploadStatus('กำลังอัพโหลดไฟล์วิดีโอ...');
+                    
+                    await simulateFileUpload(videoFile, 'video', (uploaded, total) => {
+                        updateVideoProgress(uploaded, total);
+                        updateOverallProgress(totalUploaded + uploaded, totalFileSize);
+                    });
+                    
+                    const videoBase64 = await fileToBase64(videoFile);
+                    formData.videoFile = videoBase64;
+                    totalUploaded += videoFile.size;
+                    updateUploadStatus('อัพโหลดไฟล์วิดีโอสำเร็จ!');
+                }
+                
+                // Final progress update
+                updateOverallProgress(totalFileSize, totalFileSize);
+                updateUploadStatus('กำลังส่งข้อมูลไปยังเซิร์ฟเวอร์...');
+                
+                // Send to Apps Script
+                const params = new URLSearchParams();
+                params.append('data', JSON.stringify(formData));
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateUploadStatus('อัพโหลดสำเร็จ! 🎉');
+                    showStatus('success', 'อัพโหลดข้อมูลสำเร็จ! ข้อมูลของคุณได้รับการบันทึกแล้ว');
+                    
+                    // Reset form and hide previews
+                    setTimeout(() => {
+                        document.getElementById('uploadForm').reset();
+                        document.getElementById('coverPreview').classList.add('hidden');
+                        document.getElementById('videoPreview').classList.add('hidden');
+                        hideUploadProgress();
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'เกิดข้อผิดพลาดในการอัพโหลด');
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateUploadStatus('เกิดข้อผิดพลาด! ❌');
+                showStatus('error', error.message || 'เกิดข้อผิดพลาดในการอัพโหลด กรุณาลองใหม่อีกครั้ง');
+                
+                // Hide progress after error
+                setTimeout(() => {
+                    hideUploadProgress();
+                }, 3000);
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoader.classList.add('hidden');
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96719e8110b074f2',t:'MTc1Mzg0NDU2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -16,6 +16,9 @@
             background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;
         }
+        .head {
+            position: fixed;
+        }
         
         .netflix-red {
             background: linear-gradient(45deg, #e50914, #f40612);
@@ -88,7 +91,7 @@
 </head>
 <body class="min-h-screen text-white">
     <!-- Header -->
-        <header class="bg-black py-4 px-6">
+        <header class="bg-black py-4 px-6 head">
         <div class="flex justify-between items-center">
             <h1 class="text-3xl font-bold text-red-600 cursor-pointer" onclick="window.location.href='/vdo-flix'">VideoFlix</h1>
             

@@ -9,6 +9,9 @@
     <link rel="icon" type="image/x-icon" href="logo64x64.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .head {
+            position: fixed;
+        }
         .carousel-container {
             scroll-behavior: smooth;
             scrollbar-width: none; /* Firefox */
@@ -61,7 +64,7 @@
 <body class="bg-gray-900 text-white">
     
     <!-- Header -->
-    <header class="bg-black py-4 px-6">
+    <header class="bg-black py-4 px-6 head">
         <div class="flex justify-between items-center">
             <h1 class="text-3xl font-bold text-red-600 cursor-pointer" onclick="showHomePage()">VideoFlix</h1>
             

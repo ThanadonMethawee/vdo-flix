@@ -153,33 +153,36 @@
             </div>
             
             <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
-                <!-- Container ปรับอัตราส่วน 16:9 อัตโนมัติ -->
-                <div id="modalVideo" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-inner">
+                <!-- Container ปรับอัตราส่วน 16:9 สำหรับมือถือ -->
+                <div id="modalVideo" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
                     
-                    <!-- iframe บังคับเต็มพื้นที่กล่อง 100% ทั้งกว้างและสูง -->
-                    <iframe id="modalIframe" 
-                            class="absolute inset-0 w-full h-full border-0 hidden z-10" 
-                            src="" 
-                            allow="autoplay; fullscreen; picture-in-picture" 
-                            allowfullscreen="true">
-                    </iframe>
+                    <!-- Wrapper ปรับขนาดการแสดงผลของ Google Drive player -->
+                    <div class="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center">
+                        <iframe id="modalIframe" 
+                                class="w-full h-full border-0 hidden z-10" 
+                                style="transform: scale(1.001); transform-origin: center center;"
+                                src="" 
+                                allow="autoplay; fullscreen; picture-in-picture" 
+                                allowfullscreen="true">
+                        </iframe>
+                    </div>
                 
                     <!-- Loading Placeholder -->
                     <div id="modalVideoPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-0">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mb-2"></div>
                         <p class="text-xs text-gray-400">กำลังโหลดวิดีโอ...</p>
                     </div>
-
+                
                     <!-- Error Fallback Container -->
                     <div id="modalVideoError" class="absolute inset-0 hidden flex-col items-center justify-center bg-gray-900 text-center p-4 z-20">
                         <svg class="w-10 h-10 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <p class="text-white text-xs sm:text-sm font-semibold mb-1">ไม่สามารถเล่นวิดีโอในนี้ได้</p>
-                        <p class="text-gray-400 text-[11px] sm:text-xs mb-3">อาจเกิดจากสิทธิ์การเข้าถึงไฟล์ หรือข้อจำกัดเบราว์เซอร์</p>
+                        <p class="text-white text-xs sm:text-sm font-semibold mb-1">ไม่สามารถแสดงผลในหน้านี้ได้</p>
+                        <p class="text-gray-400 text-[11px] sm:text-xs mb-3">เบราว์เซอร์มือถือจำกัดการเล่นวิดีโอข้ามไซต์</p>
                         <a id="modalDriveFallbackLink" href="#" target="_blank" rel="noopener noreferrer" 
                            class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-lg">
-                            เปิดเล่นใน Google Drive
+                            คลิกเพื่อดูบน Google Drive
                         </a>
                     </div>
                 

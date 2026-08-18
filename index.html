@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -160,15 +158,29 @@
                     
                     <!-- iframe บังคับเต็มพื้นที่กล่อง 100% ทั้งกว้างและสูง -->
                     <iframe id="modalIframe" 
-                            class="absolute inset-0 w-full h-full border-0 hidden" 
+                            class="absolute inset-0 w-full h-full border-0 hidden z-10" 
                             src="" 
                             allow="autoplay; fullscreen; picture-in-picture" 
                             allowfullscreen="true">
                     </iframe>
                 
                     <!-- Loading Placeholder -->
-                    <div id="modalVideoPlaceholder" class="absolute inset-0 flex items-center justify-center bg-gray-900">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                    <div id="modalVideoPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-0">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mb-2"></div>
+                        <p class="text-xs text-gray-400">กำลังโหลดวิดีโอ...</p>
+                    </div>
+
+                    <!-- Error Fallback Container -->
+                    <div id="modalVideoError" class="absolute inset-0 hidden flex-col items-center justify-center bg-gray-900 text-center p-4 z-20">
+                        <svg class="w-10 h-10 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-white text-xs sm:text-sm font-semibold mb-1">ไม่สามารถเล่นวิดีโอในนี้ได้</p>
+                        <p class="text-gray-400 text-[11px] sm:text-xs mb-3">อาจเกิดจากสิทธิ์การเข้าถึงไฟล์ หรือข้อจำกัดเบราว์เซอร์</p>
+                        <a id="modalDriveFallbackLink" href="#" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-lg">
+                            เปิดเล่นใน Google Drive
+                        </a>
                     </div>
                 
                 </div>
@@ -207,7 +219,7 @@
         let videosData = [];
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyomx1ay-LJfJcI1wYPfZMV8N82zijts54YLeUMX1XUJYNhNyiKn9jNpvoFsuXnsaxR/exec';
 
-        // Sample data for demonstration (will be replaced with Google Sheets data)
+        // Sample data for demonstration
         const sampleData = [
             {
                 id: 1,
@@ -217,71 +229,18 @@
                 description: "หนังแอคชั่นไซไฟสุดมันส์",
                 category: "Short Film",
                 poster: "https://via.placeholder.com/300x450/1f2937/ffffff?text=Matrix+Reloaded",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
-            },
-            {
-                id: 2,
-                title: "Inception",
-                member: "Jane Smith",
-                time: "2024-01-14 16:45",
-                description: "หนังระทึกขวัญเรื่องความฝัน",
-                category: "MV",
-                poster: "https://via.placeholder.com/300x450/374151/ffffff?text=Inception",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
-            },
-            {
-                id: 3,
-                title: "Interstellar",
-                member: "Mike Johnson",
-                time: "2024-01-13 19:20",
-                description: "การผจญภัยในอวกาศ",
-                category: "Teaser",
-                poster: "https://via.placeholder.com/300x450/4b5563/ffffff?text=Interstellar",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
-            },
-            {
-                id: 4,
-                title: "Avatar",
-                member: "Sarah Wilson",
-                time: "2024-01-12 21:10",
-                description: "โลกแห่งแพนดอร่า",
-                category: "Short Film",
-                poster: "https://via.placeholder.com/300x450/6b7280/ffffff?text=Avatar",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
-            },
-            {
-                id: 5,
-                title: "Avengers Endgame",
-                member: "Tom Brown",
-                time: "2024-01-11 18:30",
-                description: "การต่อสู้ครั้งสุดท้าย",
-                category: "MV",
-                poster: "https://via.placeholder.com/300x450/9ca3af/ffffff?text=Avengers",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
-            },
-            {
-                id: 6,
-                title: "Spider-Man",
-                member: "Lisa Davis",
-                time: "2024-01-10 20:15",
-                description: "มนุษย์แมงมุมผู้พิทักษ์โลก",
-                category: "Teaser",
-                poster: "https://via.placeholder.com/300x450/d1d5db/000000?text=Spider-Man",
-                preview: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4"
+                preview: "17zYHp3DJluF7XKXtL0g3DQQB3vQTNwc0"
             }
         ];
 
-        // Convert Google Drive link to direct URL (Optimized & Cleaned)
+        // Convert Google Drive link to direct URL
         function convertGoogleDriveUrl(url, isVideo = false) {
             if (!url) return isVideo ? { primary: '', embed: '', fileId: null } : '';
         
             let fileId = '';
-        
-            // Extract File ID using comprehensive Regex
-            // รองรับทั้ง /file/d/ID, /open?id=ID, uc?id=ID และ ID เพียวๆ
             const driveRegex = /(?:https?:\/\/)?(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/;
             const match = url.match(driveRegex);
-        
+
             const directIdRegex = /^[a-zA-Z0-9_-]{25,}$/;
             const matchDirect = url.match(directIdRegex);
         
@@ -293,7 +252,6 @@
         
             if (fileId) {
                 if (isVideo) {
-                    // บังคับภาษาไทย (?hl=th) ให้ UI เพลเยอร์แสดงภาษาไทยบนมือถืออัตโนมัติ
                     const previewUrl = `https://drive.google.com/file/d/${fileId}/preview?hl=th`;
                     return {
                         primary: previewUrl,
@@ -301,12 +259,10 @@
                         fileId: fileId
                     };
                 } else {
-                    // For images / thumbnails
                     return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                 }
             }
         
-            // Return fallback format for non-Google Drive links
             return isVideo ? { primary: url, embed: url, fileId: null } : url;
         }
 
@@ -332,13 +288,17 @@
                         };
                     });
                 } else {
-                    // Use sample data if no data from sheets
-                    videosData = sampleData;
+                    videosData = sampleData.map(item => ({
+                        ...item,
+                        videoUrls: convertGoogleDriveUrl(item.preview, true)
+                    }));
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
-                // Use sample data as fallback
-                videosData = sampleData;
+                videosData = sampleData.map(item => ({
+                    ...item,
+                    videoUrls: convertGoogleDriveUrl(item.preview, true)
+                }));
             }
             
             renderContent();
@@ -349,7 +309,6 @@
             const cardClass = isCarousel ? 'flex-shrink-0 w-80' : '';
             const fallbackImage = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(video.title)}`;
             
-            // Category badge colors
             const categoryColors = {
                 'MV': 'bg-purple-600',
                 'Teaser': 'bg-blue-600',
@@ -366,7 +325,6 @@
                              onerror="this.src='${fallbackImage}'; this.onerror=null;"
                              loading="lazy">
 
-                        <!-- Category Badge -->
                         <div class="absolute top-2 right-2 ${categoryColor} text-white px-2 py-1 rounded-full text-xs font-medium">
                             ${video.category}
                         </div>
@@ -386,62 +344,29 @@
             const carousel = document.getElementById('carousel');
             const gallery = document.getElementById('gallery');
             
-            // Render carousel (latest 6 videos)
             const latestVideos = videosData.slice(0, 6);
             carousel.innerHTML = latestVideos.map(video => createVideoCard(video, true)).join('');
-            
-            // Render gallery (all videos)
             gallery.innerHTML = videosData.map(video => createVideoCard(video)).join('');
             
-            // Show content and hide loading
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
-            
-            // Add hover event listeners for video preview
-            addHoverListeners();
         }
 
-        // Add hover event listeners
-        function addHoverListeners() {
-            // No additional hover listeners needed - CSS handles the scaling
-        }
-
-        // Format date to Thai format (วัน เดือน ปี)
+        // Format date to Thai format
         function formatThaiDate(dateString) {
             if (!dateString) return 'ไม่ระบุวันที่';
-            
             try {
-                // Try to parse the date string
-                let date;
+                let date = new Date(dateString);
+                if (isNaN(date.getTime())) return dateString;
                 
-                // If it's already a valid date string, parse it
-                if (dateString.includes('-') || dateString.includes('/')) {
-                    date = new Date(dateString);
-                } else {
-                    // If it's in a different format, try to parse it
-                    date = new Date(dateString);
-                }
-                
-                // Check if date is valid
-                if (isNaN(date.getTime())) {
-                    return dateString; // Return original if can't parse
-                }
-                
-                // Thai month names
                 const thaiMonths = [
                     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
                     'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
                 ];
                 
-                const day = date.getDate();
-                const month = thaiMonths[date.getMonth()];
-                const year = date.getFullYear() + 543; // Convert to Buddhist Era
-                
-                return `${day} ${month} ${year}`;
-                
+                return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
             } catch (error) {
-                console.error('Error formatting date:', error);
-                return dateString; // Return original if error
+                return dateString;
             }
         }
 
@@ -452,248 +377,84 @@
             
             document.getElementById('modalTitle').textContent = video.title;
             document.getElementById('modalMember').textContent = video.member;
-            
-            // Format time to Thai date format
-            const formattedTime = formatThaiDate(video.time);
-            document.getElementById('modalTime').textContent = formattedTime;
-            
+            document.getElementById('modalTime').textContent = formatThaiDate(video.time);
             document.getElementById('modalDescription').textContent = video.description;
             
-            // Set category with color
             const modalCategory = document.getElementById('modalCategory');
             const categoryColors = {
                 'MV': 'bg-purple-600',
                 'Teaser': 'bg-blue-600',
                 'Short Film': 'bg-green-600'
             };
-            const categoryColor = categoryColors[video.category] || 'bg-gray-600';
             modalCategory.textContent = video.category;
-            modalCategory.className = `text-white px-2 py-1 rounded text-sm ${categoryColor}`;
+            modalCategory.className = `text-white px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-semibold ${categoryColors[video.category] || 'bg-gray-600'}`;
             
-            // Show loading initially and start loading video
-            const videoPlayer = document.getElementById('modalVideoPlayer');
-            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
-            
-            videoPlayer.classList.add('hidden');
-            videoPlaceholder.classList.remove('hidden');
-            
-            // Store video data for later use
             window.currentVideoData = video;
             
             document.getElementById('modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             
-            // Auto-load video
             playVideo();
         }
 
-        // Play video function
+        // Play video function using statically rendered iframe
         function playVideo() {
             const video = window.currentVideoData;
-            if (!video) return;
+            const iframe = document.getElementById('modalIframe');
+            const placeholder = document.getElementById('modalVideoPlaceholder');
+            const errorContainer = document.getElementById('modalVideoError');
+            const fallbackLink = document.getElementById('modalDriveFallbackLink');
             
-            const videoPlayer = document.getElementById('modalVideoPlayer');
-            const videoSource = document.getElementById('modalVideoSource');
-            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
-            const modalVideo = document.getElementById('modalVideo');
-            
-            if (video.preview && video.videoUrls) {
-                // Try to load video with fallback options
-                setupVideoPlayer(video.videoUrls, videoPlayer, videoSource, videoPlaceholder, modalVideo);
-            } else {
-                videoPlayer.classList.add('hidden');
-                videoPlaceholder.classList.remove('hidden');
-            }
-        }
+            // Reset States
+            iframe.classList.add('hidden');
+            iframe.src = '';
+            errorContainer.classList.add('hidden');
+            errorContainer.classList.remove('flex');
+            placeholder.classList.remove('hidden');
 
-        // Setup video player with iframe embed as primary method
-        function setupVideoPlayer(videoUrls, videoPlayer, videoSource, videoPlaceholder, modalVideo) {
-            console.log('Setting up video player with URLs:', videoUrls);
-            
-            // Clear any existing iframe first
-            const existingIframe = modalVideo.querySelector('iframe');
-            if (existingIframe) {
-                existingIframe.remove();
-            }
-            
-            // Hide video player and placeholder initially
-            videoPlayer.classList.add('hidden');
-            videoPlaceholder.classList.add('hidden');
-            
-            // Use iframe embed for all videos (Google Drive format)
-            if (videoUrls.fileId) {
-                console.log('Using Google Drive iframe embed with file ID:', videoUrls.fileId);
-                setupGoogleDriveIframe(videoUrls.fileId, modalVideo);
-            } else if (videoUrls.embed && videoUrls.embed !== '') {
-                console.log('Using generic iframe embed');
-                setupGenericIframe(videoUrls.embed, modalVideo, videoPlayer, videoPlaceholder);
-            } else {
-                console.log('No valid video URL found');
-                videoPlayer.classList.add('hidden');
-                videoPlaceholder.classList.remove('hidden');
-            }
-        }
-
-        // Setup Google Drive iframe player (Mobile-Optimized)
-        function setupGoogleDriveIframe(fileId, modalVideo) {
-            console.log('Setting up Google Drive iframe for file:', fileId);
-            
-            // Show loading state
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'w-full h-full bg-gray-900 rounded-xl flex flex-col items-center justify-center absolute inset-0 z-10';
-            loadingDiv.innerHTML = `
-                <div class="text-center p-4">
-                    <div class="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-red-600 mx-auto mb-3"></div>
-                    <p class="text-white text-xs sm:text-sm mb-1 font-medium">กำลังโหลดวิดีโอจาก Google Drive...</p>
-                    <p class="text-gray-400 text-[10px] sm:text-xs">หากใช้เวลานาน กรุณาตรวจสอบการตั้งค่าแชร์ไฟล์</p>
-                </div>
-            `;
-            modalVideo.appendChild(loadingDiv);
-            
-            // Create iframe with Responsive & Mobile Friendly attributes
-            const iframe = document.createElement('iframe');
-            iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
-            
-            // ใช้ Tailwind คุมขนาดแบบ 100% ให้ยืดตาม Aspect Ratio 16:9 ของ Container
-            iframe.className = 'w-full h-full rounded-xl border-0 relative z-0';
-            iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
-            iframe.setAttribute('allowfullscreen', 'true');
-            iframe.setAttribute('webkitallowfullscreen', 'true');
-            iframe.setAttribute('mozallowfullscreen', 'true');
-            iframe.style.display = 'none';
-            
-            // Handle iframe load
-            iframe.onload = () => {
-                console.log('Google Drive iframe loaded successfully');
-                loadingDiv.remove();
-                iframe.style.display = 'block';
-            };
-            
-            // Handle iframe error
-            iframe.onerror = () => {
-                console.log('Google Drive iframe failed to load');
-                showDriveErrorState(loadingDiv, fileId);
-            };
-            
-            modalVideo.appendChild(iframe);
-            
-            // Timeout fallback (8 วินาที สำหรับเครือข่ายมือถือ)
-            setTimeout(() => {
-                if (iframe.style.display === 'none') {
-                    console.log('Google Drive iframe timeout');
-                    showDriveErrorState(loadingDiv, fileId);
+            if (video && video.videoUrls && video.videoUrls.embed) {
+                // Set fallback URL
+                if (video.videoUrls.fileId) {
+                    fallbackLink.href = `https://drive.google.com/file/d/${video.videoUrls.fileId}/view`;
+                } else {
+                    fallbackLink.href = video.videoUrls.embed;
                 }
-            }, 8000);
-        }
 
-        // Helper สำหรับแสดงปุ่มสำรองกรณี Google Drive โหลดไม่ได้/ติดสิทธิ์เข้าถึง
-        function showDriveErrorState(container, fileId) {
-            container.innerHTML = `
-                <div class="text-center p-4">
-                    <svg class="w-10 h-10 sm:w-12 sm:h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="text-white text-xs sm:text-sm font-semibold mb-1">ไม่สามารถแสดงผลวิดีโอในนี้ได้</p>
-                    <p class="text-gray-400 text-[11px] sm:text-xs mb-3">อาจเกิดจากสิทธิ์การเข้าถึงไฟล์ หรือข้อจำกัดเบราว์เซอร์มือถือ</p>
-                    <a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" rel="noopener noreferrer" 
-                       class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-lg">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
-                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
-                        </svg>
-                        เปิดเล่นใน Google Drive App
-                    </a>
-                </div>
-            `;
-        }
+                // Load iframe
+                iframe.src = video.videoUrls.embed;
 
-        // Setup generic iframe player (for non-Google Drive videos)
-        function setupGenericIframe(embedUrl, modalVideo, videoPlayer, videoPlaceholder) {
-            console.log('Setting up generic iframe with URL:', embedUrl);
-            
-            if (embedUrl && embedUrl !== '') {
-                videoPlayer.classList.add('hidden');
-                videoPlaceholder.classList.add('hidden');
-                
-                // Show loading state
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'w-full h-full bg-gray-900 rounded flex items-center justify-center';
-                loadingDiv.innerHTML = `
-                    <div class="text-center p-4">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-                        <p class="text-white text-sm">กำลังโหลดวิดีโอ...</p>
-                    </div>
-                `;
-                modalVideo.appendChild(loadingDiv);
-                
-                const iframe = document.createElement('iframe');
-                iframe.src = embedUrl;
-                iframe.className = 'w-full h-full rounded';
-                iframe.setAttribute('allowfullscreen', '');
-                iframe.setAttribute('webkitallowfullscreen', '');
-                iframe.setAttribute('mozallowfullscreen', '');
-                iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media');
-                iframe.setAttribute('frameborder', '0');
-                iframe.style.display = 'none';
-                
                 iframe.onload = () => {
-                    console.log('Generic iframe loaded successfully');
-                    loadingDiv.remove();
-                    iframe.style.display = 'block';
+                    placeholder.classList.add('hidden');
+                    iframe.classList.remove('hidden');
                 };
-                
-                iframe.onerror = () => {
-                    console.log('Generic iframe failed to load');
-                    loadingDiv.remove();
-                    videoPlayer.classList.add('hidden');
-                    videoPlaceholder.classList.remove('hidden');
-                    iframe.remove();
-                };
-                
-                modalVideo.appendChild(iframe);
-                
-                // Timeout fallback
+
+                // Fallback timeout for mobile networks
                 setTimeout(() => {
-                    if (iframe.style.display === 'none') {
-                        console.log('Generic iframe timeout');
-                        iframe.onerror();
+                    if (iframe.classList.contains('hidden') && !errorContainer.classList.contains('flex')) {
+                        placeholder.classList.add('hidden');
+                        errorContainer.classList.remove('hidden');
+                        errorContainer.classList.add('flex');
                     }
                 }, 8000);
-                
+
             } else {
-                console.log('No embed URL provided');
-                videoPlayer.classList.add('hidden');
-                videoPlaceholder.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                errorContainer.classList.remove('hidden');
+                errorContainer.classList.add('flex');
             }
         }
 
         // Close modal
         function closeModal() {
-            const videoPlayer = document.getElementById('modalVideoPlayer');
-            const modalVideo = document.getElementById('modalVideo');
-            const videoPlaceholder = document.getElementById('modalVideoPlaceholder');
+            const iframe = document.getElementById('modalIframe');
+            iframe.src = '';
+            iframe.classList.add('hidden');
             
-            // Stop video player
-            videoPlayer.pause();
-            videoPlayer.currentTime = 0;
-            videoPlayer.classList.add('hidden');
+            document.getElementById('modalVideoPlaceholder').classList.remove('hidden');
+            document.getElementById('modalVideoError').classList.add('hidden');
+            document.getElementById('modalVideoError').classList.remove('flex');
             
-            // Remove any iframe
-            const iframe = modalVideo.querySelector('iframe');
-            if (iframe) {
-                iframe.remove();
-            }
-            
-            // Remove any loading divs or custom containers
-            const customDivs = modalVideo.querySelectorAll('div:not(#modalVideoPlayer):not(#modalVideoPlaceholder)');
-            customDivs.forEach(div => div.remove());
-            
-            // Reset to loading view
-            videoPlaceholder.classList.remove('hidden');
-            
-            // Clear current video data
             window.currentVideoData = null;
-            
             document.getElementById('modal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
@@ -703,57 +464,23 @@
             const carousel = document.getElementById('carousel');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
+            const scrollDistance = 336;
             
-            // Calculate scroll distance based on card width + gap
-            const scrollDistance = 336; // 320px card width + 16px gap
-            
-            prevBtn.addEventListener('click', () => {
-                carousel.scrollBy({ 
-                    left: -scrollDistance, 
-                    behavior: 'smooth' 
-                });
-            });
-            
-            nextBtn.addEventListener('click', () => {
-                carousel.scrollBy({ 
-                    left: scrollDistance, 
-                    behavior: 'smooth' 
-                });
-            });
-            
-            // Add smooth scrolling with mouse wheel
-            carousel.addEventListener('wheel', (e) => {
-                if (e.deltaY !== 0) {
-                    e.preventDefault();
-                    carousel.scrollBy({
-                        left: e.deltaY > 0 ? scrollDistance / 2 : -scrollDistance / 2,
-                        behavior: 'smooth'
-                    });
-                }
-            });
+            prevBtn.addEventListener('click', () => carousel.scrollBy({ left: -scrollDistance, behavior: 'smooth' }));
+            nextBtn.addEventListener('click', () => carousel.scrollBy({ left: scrollDistance, behavior: 'smooth' }));
         }
 
         // Event listeners
         document.getElementById('closeModal').addEventListener('click', closeModal);
-        
         document.getElementById('modal').addEventListener('click', (e) => {
-            if (e.target.id === 'modal') {
-                closeModal();
-            }
+            if (e.target.id === 'modal') closeModal();
         });
-        
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
+            if (e.key === 'Escape') closeModal();
         });
+
         // Filter videos by category
-        let currentFilter = 'all';
-        
         function filterVideos(category) {
-            currentFilter = category;
-            
-            // Update active button
             document.querySelectorAll('.category-filter').forEach(btn => {
                 btn.classList.remove('active', 'bg-red-600', 'hover:bg-red-700');
                 btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
@@ -765,10 +492,8 @@
                 activeBtn.classList.add('active', 'bg-red-600', 'hover:bg-red-700');
             }
             
-            // Filter and render gallery
             const filteredVideos = category === 'all' ? videosData : videosData.filter(video => video.category === category);
-            const gallery = document.getElementById('gallery');
-            gallery.innerHTML = filteredVideos.map(video => createVideoCard(video)).join('');
+            document.getElementById('gallery').innerHTML = filteredVideos.map(video => createVideoCard(video)).join('');
         }
 
         // Initialize
@@ -777,5 +502,5 @@
             fetchData();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'964d30dd25f6938e',t:'MTc1MzQ2MjU4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

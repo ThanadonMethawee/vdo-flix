@@ -155,14 +155,22 @@
             </div>
             
             <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
-                <div id="modalVideo" class="bg-black/90 rounded-xl aspect-video flex items-center justify-center relative overflow-hidden shadow-inner">
-                    <video id="modalVideoPlayer" class="w-full h-full rounded-xl hidden" controls preload="metadata">
-                        <source id="modalVideoSource" src="" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                    <div id="modalVideoPlaceholder" class="flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-red-600"></div>
+                <!-- Container ปรับอัตราส่วน 16:9 อัตโนมัติ -->
+                <div id="modalVideo" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-inner">
+                    
+                    <!-- iframe บังคับเต็มพื้นที่กล่อง 100% ทั้งกว้างและสูง -->
+                    <iframe id="modalIframe" 
+                            class="absolute inset-0 w-full h-full border-0 hidden" 
+                            src="" 
+                            allow="autoplay; fullscreen; picture-in-picture" 
+                            allowfullscreen="true">
+                    </iframe>
+                
+                    <!-- Loading Placeholder -->
+                    <div id="modalVideoPlaceholder" class="absolute inset-0 flex items-center justify-center bg-gray-900">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
                     </div>
+                
                 </div>
                 
                 <div class="bg-gray-900/60 p-4 rounded-xl border border-gray-700/40 space-y-3 text-sm sm:text-base">
@@ -263,48 +271,42 @@
             }
         ];
 
-        // Convert Google Drive link to direct URL
+        // Convert Google Drive link to direct URL (Optimized & Cleaned)
         function convertGoogleDriveUrl(url, isVideo = false) {
-            if (!url) return '';
-            
-            // Check for different Google Drive URL formats
+            if (!url) return isVideo ? { primary: '', embed: '', fileId: null } : '';
+        
             let fileId = '';
-            
-            // Format 1: https://drive.google.com/file/d/FILE_ID
-            const driveRegex1 = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
-            const match1 = url.match(driveRegex1);
-            
-            // Format 2: https://drive.google.com/open?id=FILE_ID
-            const driveRegex2 = /https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/;
-            const match2 = url.match(driveRegex2);
-            
-            // Format 3: Direct file ID
+        
+            // Extract File ID using comprehensive Regex
+            // รองรับทั้ง /file/d/ID, /open?id=ID, uc?id=ID และ ID เพียวๆ
+            const driveRegex = /(?:https?:\/\/)?(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/;
+            const match = url.match(driveRegex);
+        
             const directIdRegex = /^[a-zA-Z0-9_-]{25,}$/;
-            const match3 = url.match(directIdRegex);
-            
-            if (match1) {
-                fileId = match1[1];
-            } else if (match2) {
-                fileId = match2[1];
-            } else if (match3) {
-                fileId = url;
+            const matchDirect = url.match(directIdRegex);
+        
+            if (match && match[1]) {
+                fileId = match[1];
+            } else if (matchDirect) {
+                fileId = url.trim();
             }
-            
+        
             if (fileId) {
                 if (isVideo) {
-                    // For videos, use the preview format as primary method
+                    // บังคับภาษาไทย (?hl=th) ให้ UI เพลเยอร์แสดงภาษาไทยบนมือถืออัตโนมัติ
+                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview?hl=th`;
                     return {
-                        primary: `https://drive.google.com/file/d/${fileId}/preview`,
-                        embed: `https://drive.google.com/file/d/${fileId}/preview`,
+                        primary: previewUrl,
+                        embed: previewUrl,
                         fileId: fileId
                     };
                 } else {
-                    // For images, use the thumbnail format
+                    // For images / thumbnails
                     return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                 }
             }
-            
-            // Return original URL if not a Google Drive link
+        
+            // Return fallback format for non-Google Drive links
             return isVideo ? { primary: url, embed: url, fileId: null } : url;
         }
 

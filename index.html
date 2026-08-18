@@ -532,29 +532,32 @@
             }
         }
 
-        // Setup Google Drive iframe player
+        // Setup Google Drive iframe player (Mobile-Optimized)
         function setupGoogleDriveIframe(fileId, modalVideo) {
             console.log('Setting up Google Drive iframe for file:', fileId);
             
             // Show loading state
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'w-full h-full bg-gray-900 rounded flex flex-col items-center justify-center';
+            loadingDiv.className = 'w-full h-full bg-gray-900 rounded-xl flex flex-col items-center justify-center absolute inset-0 z-10';
             loadingDiv.innerHTML = `
                 <div class="text-center p-4">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-                    <p class="text-white text-sm mb-2">กำลังโหลดวิดีโอจาก Google Drive...</p>
+                    <div class="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-red-600 mx-auto mb-3"></div>
+                    <p class="text-white text-xs sm:text-sm mb-1 font-medium">กำลังโหลดวิดีโอจาก Google Drive...</p>
+                    <p class="text-gray-400 text-[10px] sm:text-xs">หากใช้เวลานาน กรุณาตรวจสอบการตั้งค่าแชร์ไฟล์</p>
                 </div>
             `;
             modalVideo.appendChild(loadingDiv);
             
-            // Create iframe with exact format you specified
+            // Create iframe with Responsive & Mobile Friendly attributes
             const iframe = document.createElement('iframe');
             iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
-            iframe.width = "640";
-            iframe.height = "480";
-            iframe.setAttribute('allow', 'autoplay');
-            iframe.setAttribute('allowfullscreen', '');
-            iframe.className = 'w-full h-full rounded';
+            
+            // ใช้ Tailwind คุมขนาดแบบ 100% ให้ยืดตาม Aspect Ratio 16:9 ของ Container
+            iframe.className = 'w-full h-full rounded-xl border-0 relative z-0';
+            iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.setAttribute('webkitallowfullscreen', 'true');
+            iframe.setAttribute('mozallowfullscreen', 'true');
             iframe.style.display = 'none';
             
             // Handle iframe load
@@ -567,30 +570,39 @@
             // Handle iframe error
             iframe.onerror = () => {
                 console.log('Google Drive iframe failed to load');
-                loadingDiv.innerHTML = `
-                    <div class="text-center p-4">
-                        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M8 5v10l7-5-7-5z"/>
-                        </svg>
-                        <p class="text-white text-sm mb-2">ไม่สามารถโหลดวิดีโอได้</p>
-                        <p class="text-gray-400 text-xs mb-4">กรุณาลองเปิดใน Google Drive</p>
-                        <button onclick="window.open('https://drive.google.com/file/d/${fileId}/view', '_blank')" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
-                            เปิดใน Google Drive
-                        </button>
-                    </div>
-                `;
+                showDriveErrorState(loadingDiv, fileId);
             };
             
             modalVideo.appendChild(iframe);
             
-            // Timeout fallback
+            // Timeout fallback (8 วินาที สำหรับเครือข่ายมือถือ)
             setTimeout(() => {
                 if (iframe.style.display === 'none') {
                     console.log('Google Drive iframe timeout');
-                    iframe.onerror();
+                    showDriveErrorState(loadingDiv, fileId);
                 }
-            }, 10000);
+            }, 8000);
+        }
+
+        // Helper สำหรับแสดงปุ่มสำรองกรณี Google Drive โหลดไม่ได้/ติดสิทธิ์เข้าถึง
+        function showDriveErrorState(container, fileId) {
+            container.innerHTML = `
+                <div class="text-center p-4">
+                    <svg class="w-10 h-10 sm:w-12 sm:h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-white text-xs sm:text-sm font-semibold mb-1">ไม่สามารถแสดงผลวิดีโอในนี้ได้</p>
+                    <p class="text-gray-400 text-[11px] sm:text-xs mb-3">อาจเกิดจากสิทธิ์การเข้าถึงไฟล์ หรือข้อจำกัดเบราว์เซอร์มือถือ</p>
+                    <a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-lg">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                        </svg>
+                        เปิดเล่นใน Google Drive App
+                    </a>
+                </div>
+            `;
         }
 
         // Setup generic iframe player (for non-Google Drive videos)
